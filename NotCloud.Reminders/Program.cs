@@ -18,43 +18,40 @@ const string greeting = "Hey! This is NotCloud!\n" +
                         "This awesome reminder service without seamless cloud sync " +
                         "allows you to manage your reminders!\n" +
                         "Here are some commands: \n" +
-                        "\t- 0 – quit the program\n" +
-                        "\t- 1 – search the reminder by title\n" +
-                        "\t- 2 – add reminder\n" +
-                        "\t- 3 – list all reminders\n" +
-                        "\t- 4 – list all reminders that are not done yet" +
-                        "\t- 5 – list all reminders that are overdue\n\n";
+                        "\t- quit – quit the program\n" +
+                        "\t- pick – pick the reminder and do sth with it\n" +
+                        "\t- add – add reminder\n" +
+                        "\t- list [notdone|overdue|all] – list reminders\n";
 
 Console.WriteLine(greeting);
 
 while (true)
 {
     Console.Write("Enter command: ");
-    var input = Console.ReadLine()!;
-    switch (input)
+    var input = Console.ReadLine()!.Split(' ');
+    switch (input[0])
     {
-        case "0":
+        case "quit":
             Console.WriteLine("Bye!");
             return;
         
-        case "1":
-            await Endpoints.Search(connectionString);
+        case "pick":
+            await Endpoints.Pick(connectionString);
             break;
         
-        case "2":
+        case "add":
             await Endpoints.AddReminder(connectionString);
             break;
         
-        case "3":
-            await Endpoints.ListAll(connectionString);
-            break;
-        
-        case "4":
-            await Endpoints.ListNotDone(connectionString);
-            break;
-        
-        case "5":
-            await Endpoints.ListOverdue(connectionString);
+        case "list":
+            if (input.Length == 1)
+            {
+                await Endpoints.List(connectionString, "all");
+            }
+            else
+            {
+                await Endpoints.List(connectionString, input[1..]);
+            }
             break;
         
         default:

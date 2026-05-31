@@ -8,7 +8,7 @@ namespace NotCloud.Reminders;
 
 public static class Endpoints
 {
-    public static async Task Search(string connection)
+    public static async Task Pick(string connection)
     {
         Console.Write("Enter the name of the reminder: ");
         var name = Console.ReadLine();
@@ -24,6 +24,28 @@ public static class Endpoints
         }
 
         Console.WriteLine(task.Title);
+        Console.Write("task(what to do)> ");
+        var whatToDo = Console.ReadLine()!;
+
+        switch (whatToDo)
+        {
+            case "complete":
+                task.IsCompleted = true;
+                await db.SaveChangesAsync();
+                return;
+            
+            case "nothing":
+                return;
+            
+            case "delete":
+                db.Tasks.Remove(task);
+                await db.SaveChangesAsync();
+                return;
+            
+            default:
+                Console.WriteLine("Unknown command.");
+                return;
+        }
     }
 
     public static async Task AddReminder(string connection)
@@ -63,34 +85,22 @@ public static class Endpoints
         Console.WriteLine("The reminder is successfully added.");
     }
 
-    public static async Task ListAll(string connection)
+    public static async Task List(string connection, params string[] filters)
     {
         var options = new DbContextOptionsBuilder<RemindersContext>().UseSqlite(connection).Options;
         await using var db = new RemindersContext(options);
-        
-        var tasks = await db.Tasks.ToListAsync();
-        foreach (var task in tasks)
+
+        IQueryable<TaskModel> query = db.Tasks;
+        if (filters.Contains("notdone"))
         {
-            Console.WriteLine(task);
+            query = query.Where(t => !t.IsCompleted);
         }
-    }
-    public static async Task ListNotDone(string connection)
-    {
-        var options = new DbContextOptionsBuilder<RemindersContext>().UseSqlite(connection).Options;
-        await using var db = new RemindersContext(options);
-        
-        var tasks = await db.Tasks.Where(t => !t.IsCompleted).ToListAsync();
-        foreach (var task in tasks)
+        if (filters.Contains("overdue"))
         {
-            Console.WriteLine(task);
+            query = query.Where(t => t.DueDate < DateTime.Today);
         }
-    }
-    public static async Task ListOverdue(string connection)
-    {
-        var options = new DbContextOptionsBuilder<RemindersContext>().UseSqlite(connection).Options;
-        await using var db = new RemindersContext(options);
         
-        var tasks = await db.Tasks.Where(t => t.DueDate < DateTime.Now).ToListAsync();
+        var tasks = await query.ToListAsync();
         foreach (var task in tasks)
         {
             Console.WriteLine(task);
